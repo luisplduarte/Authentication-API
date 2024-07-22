@@ -9,57 +9,54 @@ const router = express.Router();
 /**
  * Login route
  */
-router.post('/login', (req, res) => {
-  const { username, password } = req.body;
+router.post('/login', async (req, res) => {
+  const { username, password } = req.body
 
-  Users.findOne({ username: username }).then(user => {
-    if (!user) return res.status(400).json({ message: "user does not exist" });
-  
-    // Check if password is correct
-    user.isValidPassword(password).then(isMatch => {
-      if (isMatch) {
-        const payload = {
-          id: user._id.toString(),
-          username: user.username
-        };
-  
-        // Generate JWT token
-        jwt.sign(
-          payload,
-          process.env.JWT_SECRET,
-          { expiresIn: "1 day" },
-          (err, token) => {
-            res.json({
-              success: true,
-              token: 'Bearer ' + token
-            });
-          }
-        );
-      } else {
-        return res.status(400).json({ passwordincorrect: 'Password incorrect' });
+  const user = await Users.findOne({ username: username })
+  if (!user) return res.status(400).json({ success: false })
+
+  // Check if password is correct
+  const isMatch = await user.isValidPassword(password)
+  if (isMatch) {
+    const payload = {
+      id: user._id.toString(),
+      username: user.username
+    };
+
+    // Generate JWT token
+    jwt.sign(
+      payload,
+      process.env.JWT_SECRET,
+      { expiresIn: "1 day" },
+      (err, token) => {
+        res.json({
+          success: true,
+          token: 'Bearer ' + token
+        });
       }
-    });
-  })
-});
+    )
+  } else {
+    return res.status(400).json({ success: false })
+  }
+})
 
 /* Sign up route */
-router.post('/signup', (req, res) => {
-  const { username, password } = req.body;
-  Users.findOne({ username: username }).then(user => {
-    if (user) {
-      return res.status(400).json({ email: 'Username already exists' });
-    } else {
-      const newUser = new Users({
-        username: username,
-        password: password
-      });
+router.post('/signup', async (req, res) => {
+  const { username, password } = req.body
+  const user = await Users.findOne({ username: username })
+  if (user) {
+    return res.status(400).json({ success: false })
+  } else {
+    const newUser = new Users({
+      username: username,
+      password: password
+    })
 
-      newUser.save()
-        .then(user => res.status(201))
-        .catch(err => {console.log(err); return res.sendStatus(400)} );
-    }
-  });
-});
+    newUser.save()
+      .then(user => res.sendStatus(201))
+      .catch(err => {console.log(err); return res.status(400).json({ success: false })} )
+  }
+})
 
 /**
  * Test route to check if user is logged in.
@@ -69,7 +66,7 @@ router.get('/profile', passport.authenticate('jwt', { session: false }), (req, r
   res.json({
     id: req.user.id,
     username: req.user.username,
-  });
-});
+  })
+})
 
 module.exports = router;
