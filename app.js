@@ -4,9 +4,7 @@ const cookieParser = require('cookie-parser')
 const logger = require('morgan')
 const mongoose = require('mongoose')
 const passport = require('passport')
-require('dotenv').config()
-
-dotenv.config() // Configure dotenv to access environment variables
+require('dotenv').config()  // Configure dotenv to access environment variables
 
 mongoose.connect(process.env.MONGO_URI) // Connect to DB
 
